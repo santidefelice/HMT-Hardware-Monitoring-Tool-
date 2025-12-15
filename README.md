@@ -5,109 +5,144 @@ A real-time desktop application for monitoring system hardware performance inclu
 ## Features
 
 - **CPU Monitoring**
-  - Usage percentage
-  - Clock speeds (current/base/boost)
-  - Core temperatures
-  - Per-core utilization
+
+  - Overall CPU usage percentage
+  - Per-core utilization with progress bars
+  - Current clock frequency
+  - Core/thread counts
+  - CPU name detection per OS
+  - Core/package temperature (Linux via `psutil.sensors_temperatures`, where available)
 
 - **Memory (RAM) Monitoring**
-  - Usage percentage and absolute values
-  - Available/used memory
-  - Memory speed and timings
-  - Swap usage
+
+  - Usage percentage
+  - Total / used / available memory (in GB)
+  - Swap total / used / usage percentage
+  - Simple historical RAM usage graph
 
 - **GPU Monitoring**
-  - Temperature monitoring
-  - Usage percentage
-  - Memory utilization
-  - Clock speeds (core/memory)
-  - Power consumption
+
+  - **Windows / Linux (NVIDIA + GPUtil):**
+    - GPU load percentage
+    - GPU memory utilization and used / total memory
+    - Temperature (via NVIDIA / `nvidia-smi` / GPUtil)
+    - Power draw and power limit (where exposed)
+  - **macOS:**
+    - Static GPU information via `system_profiler`:
+      - GPU name
+      - Vendor
+      - VRAM / shared VRAM
+      - Metal support string
+    - (macOS currently does **not** provide real-time GPU usage/temperature in this app)
 
 - **Storage Monitoring**
-  - Disk usage by drive
-  - Read/write speeds
-  - Available space
-  - Health status
+
+  - Disk usage by partition (total / used / free / percentage)
+  - Global read/write speeds (MB/s) computed from disk I/O counters
 
 - **Real-time Updates**
-  - Live metrics refresh
-  - Historical graphs
-  - Customizable refresh intervals
+  - Live metrics refresh on all tabs
+  - Simple historical graphs for CPU and RAM usage
+  - Customizable refresh interval (per-app, via the **Settings** tab)
 
 ## Screenshots
 
-*Coming soon - screenshots will be added once the UI is implemented*
+_Coming soon - screenshots will be added once the UI is implemented_
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- pip package manager
+- **Python**: 3.8 or higher (tested with 3.13 via Homebrew on macOS)
+- **pip** package manager
 
 ### Dependencies
 
+- **Core Python packages (installed via pip in a virtual environment):**
+
+  - `psutil` – System and process utilities (CPU, RAM, disks, I/O, sensors)
+  - `GPUtil` – Optional GPU monitoring for NVIDIA GPUs (Windows/Linux)
+
+- **Standard library / built‑in modules (no install required):**
+
+  - `tkinter` – GUI framework (bundled with most Python distributions)
+  - `platform`, `subprocess`, `time`, `collections`, `json`, etc.
+
+- **Windows-specific (optional):**
+  - `wmi` – For richer CPU name detection (fallbacks exist if not installed)
+
+### Recommended: Virtual environment (especially on macOS / Homebrew)
+
+From the project root (`HMT-Hardware-Monitoring-Tool-`):
+
 ```bash
-pip install -r requirements.txt
+cd /Users/youruser/Desktop/HMT/HMT-Hardware-Monitoring-Tool-
+
+# 1) Create a virtual environment (once)
+python3 -m venv .venv
+
+# 2) Activate it
+source .venv/bin/activate
+
+# 3) Install Python dependencies INSIDE the venv
+python -m pip install psutil GPUtil
 ```
 
-**Required packages:**
-- `psutil` - System and process utilities
-- `GPUtil` - GPU monitoring (NVIDIA)
-- `tkinter` - GUI framework (usually included with Python)
-- `matplotlib` - For graphs and charts
-- `threading` - For background metric collection
-
-**Windows-specific:**
-- `wmi` - Windows Management Instrumentation
-- `pywin32` - Windows API access
-
-**Linux-specific:**
-- `sensors` - Hardware sensor readings
+After activation, the `python` command will refer to the virtualenv interpreter, and the app will be able to import `psutil` and (optionally) `GPUtil` without conflicting with system packages.
 
 ### Quick Start
 
-1. Clone the repository:
+1. **Clone or open the project** (example path):
+
 ```bash
-git clone https://github.com/yourusername/hardware-monitor.git
-cd hardware-monitor
+cd /Users/youruser/Desktop/HMT/HMT-Hardware-Monitoring-Tool-
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+2. **(Optional but recommended)**: Create and activate a virtualenv, then install dependencies as shown above.
 
-3. Run the application:
+3. **Run the application** from the `Code/Source` directory:
+
 ```bash
+cd Code/Source
 python index.py
 ```
+
+If you are _not_ using a virtualenv and are comfortable modifying your system Python packages, you can instead run:
+
+```bash
+python3 -m pip install psutil GPUtil
+cd Code/Source
+python3 index.py
+```
+
+> On recent Homebrew Pythons (PEP 668 “externally managed”), using a virtualenv is the safest way to install `psutil` and other libraries.
 
 ## Usage
 
 ### Basic Operation
 
-1. Launch the application by running `python main.py`
-2. The main window will display real-time hardware metrics
-3. Metrics automatically refresh every second (configurable)
-4. Use the tabs to switch between different hardware components
+1. Launch the application by running `python index.py` from `Code/Source` (preferably inside a virtualenv).
+2. The main window opens with a tabbed interface (`CPU`, `Memory`, `GPU`, `Storage`, `Settings`).
+3. Metrics automatically refresh at the configured interval (default: 1000 ms).
+4. Use the tabs to switch between different hardware components.
 
-### Configuration
+### Configuration (via Settings tab)
 
-- **Refresh Rate**: Adjust update frequency in settings (0.5-5 seconds)
-- **Temperature Units**: Toggle between Celsius and Fahrenheit
-- **Graph History**: Set how long to retain historical data
-- **Alerts**: Configure temperature and usage thresholds
+- **Refresh Interval (ms)**:  
+  Adjust the global update frequency for all metrics (250–5000 ms).  
+  Lower values update more smoothly but increase CPU usage.
 
 ## System Requirements
 
 ### Minimum Requirements
+
 - Operating System: Windows 10, macOS 10.14, or Linux
 - RAM: 100 MB available memory
 - Python: 3.8+
 - Disk Space: 50 MB
 
 ### Supported Hardware
+
 - **CPUs**: Intel, AMD (any modern processor)
 - **GPUs**: NVIDIA (GTX 900 series+), AMD (limited support)
 - **RAM**: Any DDR3/DDR4/DDR5 memory
@@ -115,19 +150,27 @@ python index.py
 
 ## Development
 
-### Project Structure
+### Project Structure (current)
+
 ```
-hardware-monitor/
-├── main.py              # Application entry point
-├── src/
-│   ├── gui/             # GUI components
-│   ├── monitors/        # Hardware monitoring modules
-│   ├── utils/           # Utility functions
-│   └── config/          # Configuration management
-├── assets/              # Icons and images
-├── tests/               # Unit tests
-├── requirements.txt     # Python dependencies
-└── README.md           # This file
+HMT-Hardware-Monitoring-Tool-/
+├── Code/
+│   ├── README.txt         # Code structure, install guide, brief user manual
+│   └── Source/
+│       └── index.py       # Application entry point (Tkinter UI and monitoring logic)
+├── Documents/
+│   ├── Project_Documentation.md
+│   ├── Daily_Scrum_Meeting_Minutes.md
+│   ├── User_Manual.md
+│   ├── Installation_Guide.md
+│   └── Shortcomings_Wishlist.md
+├── Posters/
+│   └── README.txt         # Place final poster files here
+├── Presentation Slides/
+│   └── README.txt         # Place final slide deck here
+├── Videos/
+│   └── index.html         # Links to the four required YouTube videos
+└── README.md              # This file
 ```
 
 ### Adding New Features
@@ -152,6 +195,7 @@ python -m pytest tests/
 5. Create a Pull Request
 
 ### Code Style
+
 - Follow PEP 8 Python style guide
 - Use meaningful variable names
 - Add docstrings to all functions and classes
@@ -162,21 +206,25 @@ python -m pytest tests/
 ### Common Issues
 
 **GPU monitoring not working:**
+
 - Ensure you have NVIDIA drivers installed
 - Run the application as administrator (Windows)
 - Check that your GPU is supported
 
 **Temperature readings unavailable:**
+
 - Install `lm-sensors` on Linux
 - Enable WMI service on Windows
 - Some laptops may require additional drivers
 
 **High CPU usage:**
+
 - Increase refresh interval in settings
 - Disable unused monitoring features
 - Check for background processes
 
 **Permission errors:**
+
 - Run as administrator on Windows
 - Use `sudo` on Linux for hardware access
 - Check file permissions in installation directory
@@ -202,6 +250,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Changelog
 
 ### Version 1.0.0 (Planned)
+
 - Initial release
 - Basic CPU, RAM, GPU, storage monitoring
 - Real-time graphs and metrics
